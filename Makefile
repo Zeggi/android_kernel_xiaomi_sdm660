@@ -661,9 +661,12 @@ endif
 #####################################################################################
 ###THANAS
 
-KBUILD_CFLAGS += -O3 -ffast-math -fforce-addr -mtune=native -march=native \
+KBUILD_CFLAGS += -O3 -ffast-math  -fforce-addr \
 -fomit-frame-pointer -pipe -Wno-error \
 -funroll-loops -ftree-vectorize -Wno-frame-address -Wno-maybe-uninitialized
+
+KBUILD_CFLAGS	+= $(call cc-option,-mabi=lp64)
+KBUILD_AFLAGS	+= $(call cc-option,-mabi=lp64)
 
 KBUILD_CFLAGS	+= -fopenmp 
 
@@ -674,12 +677,13 @@ LDFLAGS		+= -plugin-opt=-function-sections
 LDFLAGS		+= -plugin-opt=-data-sections
 LDFLAGS		+= -plugin-opt=new-pass-manager
 LDFLAGS		+= --plugin-opt=O3
-LDFLAGS		+= -plugin-opt=mcpu=native
+LDFLAGS		+= -plugin-opt=mcpu=kryo
 
 subdir-ccflags-y := -O3 -ffast-math -fforce-addr
 
 ### GCC SETUP
 ifeq ($(cc-name),gcc)
+KBUILD_CFLAGS += -mtune=cortex-a73.cortex-a53 -ffast-math -mcpu=cortex-a73.cortex-a53+crc+crypto+fp16+simd+sve
 KBUILD_CFLAGS += -floop-parallelize-all -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -floop-optimize -floop-nest-optimize -fprefetch-loop-arrays -ftree-loop-vectorize -Wno-maybe-uninitialized
 
 ###ldgold
@@ -690,6 +694,7 @@ endif
 ### CLANG SETUP
 ifeq ($(cc-name),clang)
 ###ldlld
+KBUILD_CFLAGS	+= -march=armv8.3-a+crc+crypto+fp16+simd+sve -mtune=cortex-a53 -mcpu=cortex-a53+crc+crypto+fp16+simd+sve 
 KBUILD_CFLAGS	+= -fuse-ld=lld
 
 KBUILD_CFLAGS	+= -Wno-uninitialized \
