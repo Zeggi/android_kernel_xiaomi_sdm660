@@ -662,45 +662,40 @@ endif
 ###THANAS
 
 KBUILD_CFLAGS += -O3 -ffast-math  -fforce-addr \
--fomit-frame-pointer -pipe -Wno-error \
--funroll-loops -ftree-vectorize -Wno-frame-address -Wno-maybe-uninitialized
+-fomit-frame-pointer -pipe \
+-funroll-loops -ftree-vectorize 
 
 KBUILD_CFLAGS	+= $(call cc-option,-mabi=lp64)
 KBUILD_AFLAGS	+= $(call cc-option,-mabi=lp64)
 
 KBUILD_CFLAGS	+= -fopenmp 
 
-subdir-ccflags-y += $(call cc-disable-warning, frame-address)
-
 LDFLAGS		+= -O3
-LDFLAGS		+= -plugin-opt=-function-sections
-LDFLAGS		+= -plugin-opt=-data-sections
-LDFLAGS		+= -plugin-opt=new-pass-manager
-LDFLAGS		+= --plugin-opt=O3
-LDFLAGS		+= -plugin-opt=mcpu=kryo
+#LDFLAGS		+= -plugin-opt=-function-sections
+#LDFLAGS		+= -plugin-opt=-data-sections
+#LDFLAGS		+= -plugin-opt=new-pass-manager
+#LDFLAGS		+= -plugin-opt=O3
+#LDFLAGS		+= -plugin-opt=mcpu=kryo
 
 subdir-ccflags-y := -O3 -ffast-math -fforce-addr
 
 ### GCC SETUP
 ifeq ($(cc-name),gcc)
 KBUILD_CFLAGS += -mtune=cortex-a73.cortex-a53 -ffast-math -mcpu=cortex-a73.cortex-a53+crc+crypto+fp16+simd+sve
-KBUILD_CFLAGS += -floop-parallelize-all -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -floop-optimize -floop-nest-optimize -fprefetch-loop-arrays -ftree-loop-vectorize -Wno-maybe-uninitialized
+KBUILD_CFLAGS += -floop-parallelize-all -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -floop-optimize -floop-nest-optimize -fprefetch-loop-arrays -ftree-loop-vectorize 
 
 ###ldgold
 LDFLAGS	+= -plugin LLVMgold.so
-KBUILD_CFLAGS	+= -fuse-ld=gold
+#KBUILD_CFLAGS	+= -fuse-ld=gold
 endif
 
 ### CLANG SETUP
 ifeq ($(cc-name),clang)
 ###ldlld
 KBUILD_CFLAGS	+= -march=armv8.3-a+crc+crypto+fp16+simd+sve -mtune=cortex-a53 -mcpu=cortex-a53+crc+crypto+fp16+simd+sve 
-KBUILD_CFLAGS	+= -fuse-ld=lld
+#KBUILD_CFLAGS	+= -fuse-ld=gold
 
-KBUILD_CFLAGS	+= -Wno-uninitialized \
-	$(call cc-disable-warning,maybe-uninitialized,)
-
-KBUILD_CFLAGS	+= -mllvm -polly \
+#KBUILD_CFLAGS	+= -mllvm -polly \
 		   -mllvm -polly-omp-backend=LLVM \
 		   -mllvm -polly-scheduling=dynamic \
 		   -mllvm -polly-scheduling-chunksize=1 \
@@ -728,7 +723,7 @@ LLVM_AR		:= llvm-ar
 LLVM_DIS	:= llvm-dis
 KBUILD_CFLAGS	+= $(call cc-option,-ffunction-sections,)
 KBUILD_CFLAGS	+= $(call cc-option,-fdata-sections,)
-#LDFLAGS		+= -plugin-opt=-safestack-use-pointer-address
+#LDFLAGS	+= -plugin-opt=-safestack-use-pointer-address
 #KBUILD_CFLAGS	+= -fvisibility=hidden -flto
 endif
 
@@ -736,7 +731,7 @@ endif
 #####################################################################################
 
 ifdef CONFIG_CC_WERROR
-KBUILD_CFLAGS	+= -Werror
+#KBUILD_CFLAGS	+= -Werror
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
@@ -893,7 +888,7 @@ KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 
 # disable stringop warnings in gcc 8+
-KBUILD_CFLAGS += $(call cc-disable-warning, stringop-truncation)
+#KBUILD_CFLAGS += $(call cc-disable-warning, stringop-truncation)
 
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
@@ -905,7 +900,9 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-merge-all-constants)
 
 # for gcc -fno-merge-all-constants disables everything, but it is fine
 # to have actual conforming behavior enabled.
+ifeq ($(cc-name),gcc)
 KBUILD_CFLAGS	+= $(call cc-option,-fmerge-constants)
+endif
 
 # Make sure -fstack-check isn't enabled (like gentoo apparently did)
 KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
