@@ -1,67 +1,76 @@
 #!/bin/bash
-### MLX COMPILATION SCRIPT
-DATE_START=$(date +"%s")
-yellow="\033[1;93m" 
-magenta="\033[05;1;95m"
-restore="\033[0m"
-echo -e "${magenta}"
-echo ΜΑΛΆΚΑΣ KERNEL
-echo -e "${yellow}"
-make kernelversion 
-echo -e "${restore}"
+### set ccache
 export USE_CCACHE=1
 export USE_PREBUILT_CACHE=1
 export PREBUILT_CACHE_DIR=~/.ccache
 export CCACHE_DIR=~/.ccache
 ccache -M 30G
 
-export KBUILD_BUILD_USER=thanas
-export KBUILD_BUILD_HOST=MLX
+### display header
+DATE_START=$(date +"%s")
+yellow="\033[1;93m" 
+magenta="\033[05;1;95m"
+restore="\033[0m"
+echo -e "${magenta}"
+echo CLOVERMOD KERNEL
+echo -e "${yellow}"
+make kernelversion 
+echo -e "${restore}"
 
-###setup
-MLX=~/GIT/android_kernel_xiaomi_sdm845
+### config developer
+#export KBUILD_BUILD_USER=thanas
+#export KBUILD_BUILD_HOST=MLX
+
+### setup general dirs
+MLX="$(pwd)"
 AK=$MLX/AnyKernel3
 OUT=$MLX/out/arch/arm64/boot
-KERNEL=~/Desktop/MLX
-###
+KERNEL=~/Desktop/CLOVERMOD
 
-###
-DEFCONFIG=malakas_beryllium_defconfig
-checkhz=$( grep -ic "framerate = < 0x3C >" $MLX/arch/arm64/boot/dts/qcom/dsi-panel-tianma-fhd-nt36672a-video.dtsi )
-if [ $checkhz -eq -1 ]; then
-HZ=stock
-echo -e "${yellow}"
-echo you are building stock
-echo -e "${restore}"
-else
-HZ=69-65hz
-echo -e "${yellow}"
-echo you are building with refreshrate overdrive
-echo -e "${restore}"
-fi;
-DEVICE=beryllium
-VERSION=q
-KERNELINFO=${VERSION}_${DEVICE}_${HZ}_$(date +"%Y-%m-%d")
+### setup toolchain dirs
+TC=/usr/bin
+
+### device specific setup
+DEFCONFIG=clovermod_defconfig
+DEVICE=clover
+VERSION=mod
+KERNELINFO=${VERSION}_${DEVICE}_$(date +"%Y-%m-%d")
 KERNELNAME=malakas_kernel_$KERNELINFO.zip
 THREADS=-j$(nproc --all)
-FLAGS="AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip"
-CLANG_FLAGS="CC=clang"
+
+### compiler setup 
+################## 
+
+### hash out #CLANG to switch compiler from clang to gcc
+CLANG="CC=clang HOSTCC=clang AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip"
+
+### set ld linker
+#LD="LD=ld.gold"
+
+### set verbosity for debugging
 #VERBOSE="V=1"
 
-###
+### initialize compilation
 export ARCH=arm64 && export SUBARCH=arm64 $DEFCONFIG
 
-export CROSS_COMPILE=aarch64-linux-gnu-
-export CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+### 
+export CROSS_COMPILE=$TC/aarch64-linux-gnu-
+export CROSS_COMPILE_ARM32=$TC/arm-linux-gnueabi-
 
+### only use for aospclang
 #export CLANG_TRIPLE=aarch64-linux-gnu-
 
-###start compilation 
+### only use for prebuilt clang
+#CLANGP=~/TOOLCHAIN/clang
+#export LD_LIBRARY_PATH="$CLANGP/../lib:$CLANGP/../lib64:$LD_LIBRARY_PATH"
+#export PATH="$CLANGP:$PATH"
+
+### start compilation 
 mkdir -p out
 make O=out ARCH=arm64 $DEFCONFIG
-make O=out $THREADS $VERBOSE $CLANG_FLAGS $FLAGS 
+make O=out $THREADS $VERBOSE $CLANG $LD
 
-###zip kernel
+### zip kernel
 if [ -e $OUT/Image.gz-dtb ]; then
 echo -e "${yellow}"
 echo zipping kernel...
@@ -74,7 +83,7 @@ zip -r $KERNELNAME * -x .git .gitignore README.md *placeholder
 rm -rf Image.gz-dtb
 mv $KERNELNAME $KERNEL
 
-###
+### build completion
 echo -e "${yellow}"
 cat $KERNEL/.compile/compile.h
 echo "-------------------"
@@ -86,12 +95,14 @@ echo -e "${magenta}"
 echo "Time: $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) seconds."
 echo -e "${restore}"
 
-###push kernel
+### push kernel
 cd $KERNEL
-###configure adb over wifi
+
+### configure adb over wifi
 #adb kill-server
 #adb tcpip 5555
 #adb connect 192.168.3.101:5555
+
 #sleep 2
 echo -e "${magenta}"
 echo CONNECT DEVICE TO PUSH KERNEL!!!
